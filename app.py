@@ -232,12 +232,15 @@ def bar(label, value, vmax, text=None, cls=""):
 # ----------------------------------------------------------------------------------------
 @st.cache_resource(show_spinner="Loading model…")
 def load_model():
-    if not MODEL_PATH.exists():
-        found = sorted(p.name for p in BASE.rglob("*") if p.is_file() and p.suffix in (".skl", ".joblib", ".pkl"))
-        st.error(f"Model file '{MODEL_PATH.name}' was not found next to app.py. "
-                 f"Model-like files found in the repo: {found or 'none'}. Upload it to the same folder as app.py.")
-        st.stop()
-    return joblib.load(MODEL_PATH)
+    path = MODEL_PATH
+    if not path.exists():
+        # Tolerate renamed downloads such as "tuned_random_forest (1).skl"
+        found = sorted(p for p in BASE.rglob("*") if p.is_file() and p.suffix in (".skl", ".joblib", ".pkl"))
+        if not found:
+            st.error(f"No model file (.skl) was found in the repo. Upload '{MODEL_PATH.name}' to the same folder as app.py.")
+            st.stop()
+        path = found[0]
+    return joblib.load(path)
 
 
 @st.cache_data(show_spinner="Loading dataset…")
